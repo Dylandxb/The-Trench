@@ -29,8 +29,32 @@ public class CameraMovement : MonoBehaviour
 
     }
 
+    private void OnEnable()
+    {
+        CameraControllers.LoadCam(firstPersonCamera);
+        CameraControllers.LoadCam(thirdPersonCamera);
+        CameraControllers.SwitchCamera(firstPersonCamera);
+    }
+
+    private void OnDisable()
+    {
+        CameraControllers.UnloadCam(firstPersonCamera);
+        CameraControllers.UnloadCam(thirdPersonCamera);
+    }
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            //switch camera
+            if (CameraControllers.IsActive(firstPersonCamera))
+            {
+                CameraControllers.SwitchCamera(thirdPersonCamera);
+            }
+            else if (CameraControllers.IsActive(thirdPersonCamera))
+            {
+                CameraControllers.SwitchCamera(firstPersonCamera);
+            }
+        }
         HandleCamera();
     }
 
@@ -44,10 +68,6 @@ public class CameraMovement : MonoBehaviour
         //Transform the rotation of the camera about x
         fpCamera.transform.localRotation = Quaternion.Euler(verticalLook, 0, 0);
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            //switch camera
-        }
+
     }
-    //Add camera switch function
 }

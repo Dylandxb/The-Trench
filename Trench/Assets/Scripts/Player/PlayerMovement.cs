@@ -29,6 +29,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool isMoving;
     [SerializeField] private bool isSprinting;
 
+
     [Header("Custom Strings")]
     [SerializeField] private string horizontalInput = "Horizontal";
     [SerializeField] private string verticalInput = "Vertical";
@@ -36,6 +37,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Inputs")]
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
+    [SerializeField] private KeyCode jumpKey = KeyCode.Space;
     //Components
     private CharacterController characterController = null;
     private Transform transform = null;
@@ -54,11 +56,6 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        //if (isMoving == true)
-        //{
-        //    Movement();
-        //}
-        //ControlState(state);
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D))
         {
             ControlPlayerState(PlayerState.WALKING);
@@ -67,7 +64,7 @@ public class PlayerMovement : MonoBehaviour
         {
             ControlPlayerState(PlayerState.SPRINTING);
         }
-        else 
+        else//When magnitude of vector3 is zero or when walkspeed = 0
         {
             ControlPlayerState(PlayerState.IDLE);
         }
@@ -97,8 +94,10 @@ public class PlayerMovement : MonoBehaviour
         //Set idle anim
         isMoving = false;
         Debug.Log("Im Idle");
+        anim.SetTrigger("Idle");
 
     }
+    //Walk sideways, forwards and backwards
     private void Walking()
     {
         anim.SetTrigger("Walking");
