@@ -19,6 +19,30 @@ public enum PlayerState
 }
 public class PlayerMovement : MonoBehaviour
 {
+    PlayerState CurrentState
+    {
+        set
+        {
+            //Way to lock states
+            //Constructor to control transition of states
+            state = value;
+            switch (state)
+            {
+                case PlayerState.IDLE:
+                    Idle();
+                    break;
+                case PlayerState.WALKING:
+                    Walking();
+                    break;
+                case PlayerState.SPRINTING:
+                    Sprinting();
+                    break;
+                case PlayerState.JUMPING:
+                    Jumping();
+                    break;
+            }
+        }
+    }
 
     [Header("Player State")]
     public PlayerState state;
@@ -26,9 +50,12 @@ public class PlayerMovement : MonoBehaviour
     [Header("Player Attributes")]
     [SerializeField] private float walkSpeed = 3.0f;
     [SerializeField] private float rotationSpeed = 90.0f;
+    [SerializeField] private float jumpHeight = 2.0f;
     [SerializeField] private bool isMoving;
     [SerializeField] private bool isSprinting;
-
+    [SerializeField] private bool isJumping;
+    [SerializeField] private bool isGrounded;
+    Vector3 moveInput = Vector3.zero;
 
     [Header("Custom Strings")]
     [SerializeField] private string horizontalInput = "Horizontal";
@@ -37,6 +64,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Inputs")]
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
+    [SerializeField] private KeyCode crouchKey = KeyCode.LeftControl;
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
     //Components
     private CharacterController characterController = null;
@@ -51,22 +79,46 @@ public class PlayerMovement : MonoBehaviour
 
     void Start()
     {
-        state = PlayerState.IDLE;
+        isMoving = false;
+        CurrentState = PlayerState.IDLE;
+
     }
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D))
+        if (Input.GetKey(KeyCode.W))
         {
-            ControlPlayerState(PlayerState.WALKING);
+            //anim.SetTrigger("WalkForwards")
+            //Set in blend tree
+            anim.SetTrigger("Walking");
+            CurrentState = PlayerState.WALKING;
+        }
+        else if (Input.GetKey(KeyCode.A))
+        {
+            anim.SetTrigger("WalkLeft");
+            CurrentState = PlayerState.WALKING;
+        }
+        else if (Input.GetKey(KeyCode.S))
+        {
+            anim.SetTrigger("WalkBack");
+            CurrentState = PlayerState.WALKING;
+        }
+        else if (Input.GetKey(KeyCode.D))
+        {
+            anim.SetTrigger("WalkRight");
+            CurrentState = PlayerState.WALKING;
         }
         else if (isSprinting == true)
         {
-            ControlPlayerState(PlayerState.SPRINTING);
+            CurrentState = PlayerState.SPRINTING;
         }
-        else//When magnitude of vector3 is zero or when walkspeed = 0
+        else if (Input.GetKey(jumpKey))
         {
-            ControlPlayerState(PlayerState.IDLE);
+            CurrentState = PlayerState.JUMPING;
+        }
+        else if (moveInput == Vector3.zero)//When magnitude of vector3 is zero or when walkspeed = 0
+        {
+            CurrentState = PlayerState.IDLE;
         }
     }
 
@@ -85,14 +137,22 @@ public class PlayerMovement : MonoBehaviour
             case PlayerState.SPRINTING:
                 Sprinting();
                 break;
+            case PlayerState.JUMPING:
+                Jumping();
+                break;
         }
-
+        //If key == W, walk forwards anim
+        //If key == A walk left anim
+        //If key == D walk right anim
+        //If key == S walk backward anim
     }
 
     private void Idle()
     {
         //Set idle anim
         isMoving = false;
+        isJumping = false;
+        isGrounded = true;
         Debug.Log("Im Idle");
         anim.SetTrigger("Idle");
 
@@ -100,7 +160,7 @@ public class PlayerMovement : MonoBehaviour
     //Walk sideways, forwards and backwards
     private void Walking()
     {
-        anim.SetTrigger("Walking");
+        //anim.SetTrigger("Walking");
         Debug.Log("Im Walking");
         Vector2 movementDir = new Vector2(Input.GetAxisRaw(horizontalInput), Input.GetAxisRaw(verticalInput));
         movementDir.Normalize();
@@ -114,16 +174,30 @@ public class PlayerMovement : MonoBehaviour
         }
         isMoving = true;
         isSprinting = false;
+        isJumping = false;
+        isGrounded = true;
+
     }
 
     private void Sprinting()
     {
         Debug.Log("Im Sprinting");
+        //Can only sprint when facing forward and holding shift
         Vector2 movementDir = new Vector2(Input.GetAxisRaw(horizontalInput), Input.GetAxisRaw(verticalInput));
         movementDir.Normalize();
         Vector3 velocity = (transform.forward * movementDir.y + transform.right * movementDir.x) * walkSpeed * 2;
         characterController.Move(velocity * Time.deltaTime);
         isMoving = true;
         //walkSpeed *= 2;
+    }
+
+    private void Jumping()
+    {
+        anim.SetTrigger("Jump");
+        Debug.Log("Im Jumping");
+        isJumping = true;
+        isGrounded = false;
+        Vector3 jumpVel = transform.up  * 10;
+        characterController.Move(jumpVel * Time.deltaTime);
     }
 }
