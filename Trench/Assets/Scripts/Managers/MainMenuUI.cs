@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
@@ -12,9 +14,14 @@ public class MainMenuUI : MonoBehaviour
         Cursor.lockState = CursorLockMode.Confined;
     }
 
-    // Update is called once per frame
-    void Update()
+    public void PlayGame()
     {
-        
+        Scenes.instance.LoadScene(Scenes.Scene.Level_1);
+        //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 }

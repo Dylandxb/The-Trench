@@ -55,10 +55,10 @@ public class CameraMovement : MonoBehaviour
                 CameraControllers.SwitchCamera(firstPersonCamera);
             }
         }
-        HandleCamera();
+        HandleCameras();
     }
 
-    void HandleCamera()
+    void HandleCameras()
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSens;
         transform.Rotate(0, mouseX, 0);
