@@ -13,14 +13,19 @@ public enum PlayerState
     WALKING = 1,
     SPRINTING = 2,
     JUMPING = 3,
-    CROUCHING = 4,
-    CRAWLING = 5,
-    SITTING = 6,
-    STAND = 7,
-    USE = 8,
-    EQUIP = 9,
-    FIRE = 10,
-    SLEEP = 11
+    WALK_LEFT = 4,
+    WALK_RIGHT = 5,
+    WALK_BACK = 6,
+    TALKING = 7
+    //CROUCHING = 4,
+    //CRAWLING = 5,
+    //SITTING = 6,
+    //STAND = 7,
+    //USE = 8,
+    //EQUIP = 9,
+    //FIRE = 10,
+    //SLEEP = 11,
+
 }
 public class PlayerMovement : MonoBehaviour
 {
@@ -29,9 +34,9 @@ public class PlayerMovement : MonoBehaviour
     {
         set
         {
-            //Way to lock states
+            //Lock state until a different key is pressed,                     //Prevents interruption of current state, only one state active at a time
             //Constructor to control transition of states
-            if (stateLocked == true)
+            if (stateLocked == false)
             {
 
             }
@@ -41,12 +46,13 @@ public class PlayerMovement : MonoBehaviour
                 case PlayerState.IDLE:
                     Idle();
                     break;
+                //If key == W, walk forwards anim
+                //If key == A walk left anim
+                //If key == D walk right anim
+                //If key == S walk backward anim
                 case PlayerState.WALKING:
                     Walking();
-                    //If key == W, walk forwards anim
-                    //If key == A walk left anim
-                    //If key == D walk right anim
-                    //If key == S walk backward anim
+                    //Only enable left and right keys when in tight spaces, for now enable left and right in a selected area
                     break;
                 case PlayerState.SPRINTING:
                     Sprinting();
@@ -54,10 +60,22 @@ public class PlayerMovement : MonoBehaviour
                 case PlayerState.JUMPING:
                     Jumping();
                     break;
+                case PlayerState.WALK_LEFT:
+                    WalkLeft();
+                    break;
+                case PlayerState.WALK_RIGHT:
+                    WalkRight();
+                    break;
+                case PlayerState.WALK_BACK:
+                    WalkBack();
+                    break;
+                //Non walking States
+                case PlayerState.TALKING:
+                    Talking();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(state), state, null);
             }
-
         }
     }
 
@@ -66,7 +84,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Player Attributes")]
     [SerializeField] private float walkSpeed = 3.0f;
-    [SerializeField] private float rotationSpeed = 90.0f;
+    [SerializeField] private float rotationSpeed = 600.0f;
     [SerializeField] private float jumpHeight = 5.0f;
     [SerializeField] private float sprintTime = 10.0f;
     [SerializeField] private float ySpeed;
@@ -75,9 +93,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool canSprint;
     [SerializeField] private bool isJumping;
     [SerializeField] private bool isGrounded;
+    [SerializeField] bool stateLocked = false;
+    [SerializeField] bool canMove = true;
     [SerializeField] private AnimationClip[] animationClips;
-    bool stateLocked;
-    bool canMove;
     Vector3 moveInput = Vector3.zero;
 
     [Header("Custom Strings")]
@@ -123,49 +141,58 @@ public class PlayerMovement : MonoBehaviour
         {
             //isGrounded = true;
             //ySpeed = 0f;
+        }
+        if (canMove == true)
+        {
+            if (Input.GetKey(KeyCode.W))
+            {
+                anim.SetBool("WalkUnarmed", true);
+                canSprint = true;
+                CurrentState = PlayerState.WALKING;
+            }
+            else if (Input.GetKey(KeyCode.A))
+            {
+                anim.SetBool("WalkLeftUnarmed", true);
+                canSprint = false;
+                CurrentState = PlayerState.WALK_LEFT;
+            }
+            else if (Input.GetKey(KeyCode.S))
+            {
+                anim.SetBool("WalkBackUnarmed", true);
+                canSprint = false;
+                CurrentState = PlayerState.WALK_BACK;
+            }
+            else if (Input.GetKey(KeyCode.D))
+            {
+                anim.SetBool("WalkRightUnarmed", true);
+                canSprint = false;
+                CurrentState = PlayerState.WALK_RIGHT;
+            }
+            else if (Input.GetKey(jumpKey))
+            {
+                //Set vertical height to jump height on key press, change state to jumping
+                ySpeed = jumpHeight;
+                canSprint = false;
+                CurrentState = PlayerState.JUMPING;
+            }
+            else if (isSprinting == true)
+            {
+                CurrentState = PlayerState.SPRINTING;
+            }
+            //When magnitude of vector3 is zero or when walkspeed = 0
+            else if (moveInput == Vector3.zero)
+            {
+                canSprint = false;
+                CurrentState = PlayerState.IDLE;
+            }
+        }
 
-        }
-        if (Input.GetKey(KeyCode.W))
-        {
-            anim.SetBool("WalkUnarmed", true);
-            canSprint = true;
-            CurrentState = PlayerState.WALKING;
-        }
-        else if (Input.GetKey(KeyCode.A))
-        {
-            anim.SetBool("WalkLeftUnarmed", true);
-            canSprint = false;
-            CurrentState = PlayerState.WALKING;
-        }
-        else if (Input.GetKey(KeyCode.S))
-        {
-            anim.SetBool("WalkBackUnarmed", true);
-            canSprint = false;
-            CurrentState = PlayerState.WALKING;
-        }
-        else if (Input.GetKey(KeyCode.D))
-        {
-            anim.SetBool("WalkRightUnarmed", true);
-            canSprint = false;
-            CurrentState = PlayerState.WALKING;
-        }
-        else if (Input.GetKey(jumpKey))
-        {
-            ySpeed = jumpHeight;
-            canSprint = false;
-            CurrentState = PlayerState.JUMPING;
-        }
-        else if (isSprinting == true)
-        {
-            CurrentState = PlayerState.SPRINTING;
-        }
-        else if (moveInput == Vector3.zero)//When magnitude of vector3 is zero or when walkspeed = 0
-        {
-            canSprint = false;
-            CurrentState = PlayerState.IDLE;
-        }
+
     }
 
+
+    private bool FreezeMovement() => canMove = false;
+    private bool UnFreezeMovement() => canMove = true;
     public void ControlPlayerState(PlayerState playerState)
     {
         state = playerState;
@@ -177,13 +204,15 @@ public class PlayerMovement : MonoBehaviour
                 break;
             case PlayerState.WALKING:
                 Walking();
-                //Movement();
                 break;
             case PlayerState.SPRINTING:
                 Sprinting();
                 break;
             case PlayerState.JUMPING:
                 Jumping();
+                break;
+            case PlayerState.TALKING:
+                Talking();
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(playerState), playerState, null);
@@ -227,6 +256,31 @@ public class PlayerMovement : MonoBehaviour
         isJumping = false;
         isGrounded = true;
         //LINK WALKING TO SPRINTING WITH BLEND TREE
+        //Make a walk left state, walk rigght state and walk back state
+    }
+
+    private void WalkLeft()
+    {
+        Vector2 movementLeft = new Vector2(Input.GetAxisRaw(horizontalInput), 0);
+        movementLeft.Normalize();
+        Vector3 velocityL = (playerTransform.forward * 0 + playerTransform.right * movementLeft.x) * walkSpeed;
+        characterController.Move(velocityL * Time.deltaTime);
+    }
+
+    private void WalkRight()
+    {
+        Vector2 movementRight = new Vector2(Input.GetAxisRaw(horizontalInput), 0);
+        movementRight.Normalize();
+        Vector3 velocityR = (playerTransform.forward * 0 + playerTransform.right * movementRight.x) * walkSpeed;
+        characterController.Move(velocityR * Time.deltaTime);
+    }
+
+    private void WalkBack()
+    {
+        Vector2 movementBack= new Vector2(0, Input.GetAxisRaw(verticalInput));
+        movementBack.Normalize();
+        Vector3 velocityB = (playerTransform.forward * movementBack.y + playerTransform.right * 0) * walkSpeed;
+        characterController.Move(velocityB * Time.deltaTime);
     }
 
     private void Sprinting()
@@ -255,6 +309,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    //TODO!!!!
     private void Jumping()
     {
         anim.SetBool("JumpUnarmed", true);
@@ -270,24 +325,27 @@ public class PlayerMovement : MonoBehaviour
         characterController.Move(jumpVel * Time.deltaTime);
     }
 
-    private void Crouching()
+    private void OnTriggerEnter(Collider other)
     {
-
-    }
-
-    private void Movement()
-    {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
-
-        Vector3 movementDirection = new Vector3(horizontalInput, 0, verticalInput);
-        float magnitude = Mathf.Clamp01(movementDirection.magnitude) * walkSpeed;
-        movementDirection.Normalize();
-        characterController.SimpleMove(movementDirection * magnitude);
-        if (movementDirection != Vector3.zero)
+        if (other.CompareTag("DialogueBox"))
         {
-            Quaternion toRotate = Quaternion.LookRotation(movementDirection, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotate, rotationSpeed * Time.deltaTime);
+            //Lock state in idle, wait a few seconds then unlock state
+            FreezeMovement();
+            ControlPlayerState(PlayerState.TALKING);
+            StartCoroutine(EnableMovement(5.0f));
         }
     }
+
+    private IEnumerator EnableMovement(float time)
+    {
+        yield return new WaitForSeconds(time);
+        UnFreezeMovement();
+    }
+
+    void Talking()
+    {
+        anim.SetBool("Talking", true);
+    }
+
+
 }
