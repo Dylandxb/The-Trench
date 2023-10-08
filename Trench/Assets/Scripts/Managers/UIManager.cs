@@ -1,33 +1,58 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
-    public GameObject mainPlayerName;
-    [SerializeField] private Transform lookAt;
-    [SerializeField] private Vector3 offset;
-    private Camera cam;
-    private Transform entity;
-    private Transform worldSpaceCanvas;
+    [SerializeField] private GameObject levelName;
+    [SerializeField] private CanvasGroup levelText;
+    [SerializeField] private bool fadeOut;
+    public static UIManager instance;
+    public float timeToFade;
+
+    private void Awake()
+    {
+        if(instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(instance);
+        }
+        else
+        {
+            Destroy(instance);
+        }
+    }
     void Start()
     {
-        cam = Camera.main;
-       // entity = transform.parent;
-       // worldSpaceCanvas = GameObject.FindObjectOfType<Canvas>().transform;
-       // transform.SetParent(worldSpaceCanvas);
+        levelName.SetActive(true);
     }
 
     void Update()
     {
-        //Fixes the game object to the NPC transform position
-        //Offset is used to displace the icon around the npc
-        Vector3 pos = cam.WorldToScreenPoint(lookAt.position + offset);
-        if (transform.position != pos)
+        StartCoroutine(FadeLevelText());
+        if (levelName.activeSelf)
         {
-            transform.position = pos;
+            fadeOut = true;
+            Debug.Log(levelText.alpha);
         }
-        //transform.rotation = Quaternion.LookRotation(transform.position - cam.transform.position);
-        //transform.position = entity.position + offset;
+        else
+        {
+            fadeOut = false;
+        }
+    }
+
+    public bool LevelNameFading()
+    {
+        return fadeOut;
+    }
+    private IEnumerator FadeLevelText()
+    {
+        if(levelText.alpha >= 0)
+        {
+            levelText.alpha -= timeToFade * Time.deltaTime;
+        }
+        yield return new WaitForSeconds(5.0f);
+        levelName.SetActive(false);
     }
 }

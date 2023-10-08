@@ -14,6 +14,7 @@ public class Scenes : MonoBehaviour
 
     [SerializeField] private GameObject canvasLoad;
     [SerializeField] private Image loadFill;
+    [SerializeField] private Slider loadingSlider;
     private float targetFill;
     
     public enum Scene
@@ -60,6 +61,21 @@ public class Scenes : MonoBehaviour
         scene.allowSceneActivation = true;
         //Disable canvas after scene loads
         canvasLoad.SetActive(false);
+    }
+
+    public void LoadAsyncLevel(Scene sceneName)
+    {
+        StartCoroutine(AsyncLoadLevel(sceneName));
+    }
+    public IEnumerator AsyncLoadLevel(Scene sceneName)
+    {
+        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName.ToString());
+        while (!loadOperation.isDone)
+        {
+            float progressVal = Mathf.Clamp01(loadOperation.progress / 0.9f);
+            loadingSlider.value = progressVal;
+            yield return null;
+        }
     }
 
     public void LoadScene(Scene sceneName)

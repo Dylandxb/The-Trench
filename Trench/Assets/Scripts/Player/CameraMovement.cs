@@ -55,7 +55,10 @@ public class CameraMovement : MonoBehaviour
                 CameraControllers.SwitchCamera(firstPersonCamera);
             }
         }
-        HandleCameras();
+        if (UIManager.instance.LevelNameFading() != true)
+        {
+            HandleCameras();
+        }
     }
 
     void HandleCameras()

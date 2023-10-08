@@ -6,6 +6,7 @@ using UnityEngine.Playables;
 using UnityEngine.UI;
 using TMPro;
 using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 
 public enum PlayerState
 {
@@ -16,15 +17,16 @@ public enum PlayerState
     WALK_LEFT = 4,
     WALK_RIGHT = 5,
     WALK_BACK = 6,
-    TALKING = 7
-    //CROUCHING = 4,
+    TALKING = 7,
+    CROUCHING = 8,
+    SLEEP = 9
     //CRAWLING = 5,
     //SITTING = 6,
     //STAND = 7,
     //USE = 8,
     //EQUIP = 9,
     //FIRE = 10,
-    //SLEEP = 11,
+
 
 }
 public class PlayerMovement : MonoBehaviour
@@ -73,6 +75,12 @@ public class PlayerMovement : MonoBehaviour
                 case PlayerState.TALKING:
                     Talking();
                     break;
+                case PlayerState.CROUCHING:
+                    Crouch();
+                    break;
+                case PlayerState.SLEEP:
+                    Sleep();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(state), state, null);
             }
@@ -88,13 +96,16 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float jumpHeight = 5.0f;
     [SerializeField] private float sprintTime = 10.0f;
     [SerializeField] private float ySpeed;
+
+    [Header("Player Conditions")]
     [SerializeField] private bool isMoving;
     [SerializeField] private bool isSprinting;
-    [SerializeField] private bool canSprint;
     [SerializeField] private bool isJumping;
     [SerializeField] private bool isGrounded;
-    [SerializeField] bool stateLocked = false;
+    [SerializeField] private bool isCrouching;
     [SerializeField] bool canMove = true;
+    [SerializeField] private bool canSprint;
+    [SerializeField] bool stateLocked = false;
     [SerializeField] private AnimationClip[] animationClips;
     Vector3 moveInput = Vector3.zero;
 
@@ -108,6 +119,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode crouchKey = KeyCode.LeftControl;
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+    [SerializeField] private KeyCode walkForwardKey = KeyCode.W;
     //Components
     private CharacterController characterController = null;
     private Transform playerTransform = null;
@@ -133,18 +145,14 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         CurrentState = PlayerState.IDLE;
+        //WAIT FOR LEVEL TO FADE OUT BEFORE ENABLING MOVEMENT & CAMERA VIEW
     }
 
     void Update()
     {
-        if (characterController.isGrounded)
+        if (canMove == true && UIManager.instance.LevelNameFading() == false)
         {
-            //isGrounded = true;
-            //ySpeed = 0f;
-        }
-        if (canMove == true)
-        {
-            if (Input.GetKey(KeyCode.W))
+            if (Input.GetKey(walkForwardKey))
             {
                 anim.SetBool("WalkUnarmed", true);
                 canSprint = true;
@@ -168,6 +176,10 @@ public class PlayerMovement : MonoBehaviour
                 canSprint = false;
                 CurrentState = PlayerState.WALK_RIGHT;
             }
+            else if (Input.GetKey(KeyCode.LeftControl))
+            {
+                CurrentState = PlayerState.CROUCHING;
+            }
             else if (Input.GetKey(jumpKey))
             {
                 //Set vertical height to jump height on key press, change state to jumping
@@ -185,7 +197,12 @@ public class PlayerMovement : MonoBehaviour
                 canSprint = false;
                 CurrentState = PlayerState.IDLE;
             }
+            else if (Input.GetKey(KeyCode.N))
+            {
+                CurrentState = PlayerState.SLEEP;
+            }            
         }
+
 
 
     }
@@ -213,6 +230,12 @@ public class PlayerMovement : MonoBehaviour
                 break;
             case PlayerState.TALKING:
                 Talking();
+                break;
+            case PlayerState.CROUCHING:
+                Crouch();
+                break;
+            case PlayerState.SLEEP:
+                Sleep();
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(playerState), playerState, null);
@@ -307,6 +330,7 @@ public class PlayerMovement : MonoBehaviour
         {
             decrease = sprintTime;
         }
+        //Lerp sprint speed back to walk speed when shift is released
     }
 
     //TODO!!!!
@@ -323,8 +347,19 @@ public class PlayerMovement : MonoBehaviour
         jumpVel.y = ySpeed;
         ySpeed += Physics.gravity.y * Time.deltaTime;
         characterController.Move(jumpVel * Time.deltaTime);
+
+        if (characterController.isGrounded)
+        {
+            isGrounded = true;
+            ySpeed = 0f;
+        }
     }
 
+    private void Crouch()
+    {
+        isCrouching = true;
+        Debug.Log("Crouch");
+    }
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("DialogueBox"))
@@ -345,6 +380,13 @@ public class PlayerMovement : MonoBehaviour
     void Talking()
     {
         anim.SetBool("Talking", true);
+        //Find object of nametaghover and enable it
+    }
+
+    private void Sleep()
+    {
+        anim.SetBool("Sleeping", true);
+        Debug.Log("Player sleeping");
     }
 
 

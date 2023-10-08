@@ -7,6 +7,7 @@ public static class CameraControllers
 {
     private static List<CinemachineVirtualCamera> cameras = new List<CinemachineVirtualCamera>();
     public static CinemachineVirtualCamera activeCam = null;
+    
 
     public static void LoadCam(CinemachineVirtualCamera camera)
     {
